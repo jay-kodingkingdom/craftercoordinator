@@ -1,9 +1,6 @@
 craftercoordinator:
-  schoolplot: []
-  school: []
   playerplot: []
-  plotlimit: []
-  heightmax: 80
-  heightmin: 60
+  heightmax: 200
+  heightmin: 2
   loadamount: 100000
   loadtime: 7

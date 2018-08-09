@@ -18,11 +18,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 
 public class CrafterCoordinator implements Listener{	
-	HashMap<UUID,CrafterPlayer> players;
 	HashMap<UUID,HashMap<String,CrafterRegion>> playerRegions;
-	
-	HashMap<String,CrafterSchool> schools;
-	HashMap<String,HashMap<String,CrafterRegion>> schoolRegions;
 	
 	boolean isCoordinating;
 	
@@ -37,7 +33,7 @@ public class CrafterCoordinator implements Listener{
 	ReentrantLock simplelock = new ReentrantLock();
 		
 	CrafterCoordinator(CrafterCoordinatorPlugin Plugin){
-		plugin=Plugin;taskQueue=new LinkedList<CrafterTask>();players= new HashMap<UUID,CrafterPlayer>();schools= new HashMap<String,CrafterSchool>();playerRegions=new HashMap<UUID,HashMap<String,CrafterRegion>>();schoolRegions=new HashMap<String,HashMap<String,CrafterRegion>>();
+		plugin=Plugin;taskQueue=new LinkedList<CrafterTask>();playerRegions=new HashMap<UUID,HashMap<String,CrafterRegion>>();
 		loadAmountLimit=Long.MAX_VALUE;loadTimeLimit=1;heightMaxLimit=Integer.MAX_VALUE;heightMinLimit=Integer.MIN_VALUE;plotLimit = new HashSet<CrafterRegion>();
 		isCoordinating=false;}	
 	
@@ -59,10 +55,6 @@ public class CrafterCoordinator implements Listener{
 		boolean limit = true;
 		for (CrafterRegion region : getPlayerRegion(e.getPlayer().getUniqueId()).values()){
 			if (region.isIn(e.getBlock().getLocation())){limit=false;return;}}
-		if (limit) for (CrafterSchool school : getSchools().values()){
-					if (school.getPlayers().contains(e.getPlayer().getUniqueId()))
-						for (CrafterRegion region : getSchoolRegion(school.getName()).values()){
-							if (region.isIn(e.getBlock().getLocation())){limit=false;return;}}}
 		if (limit){e.setCancelled(true);
 			e.getPlayer().sendMessage("You cannot build here!");}}
 	//@EventHandler
@@ -71,10 +63,6 @@ public class CrafterCoordinator implements Listener{
 		boolean limit = true;
 		for (CrafterRegion region : getPlayerRegion(e.getPlayer().getUniqueId()).values()){
 			if (region.isIn(e.getBlock().getLocation())){limit=false;return;}}
-		if (limit) for (CrafterSchool school : getSchools().values()){
-			if (school.getPlayers().contains(e.getPlayer().getUniqueId()))
-				for (CrafterRegion region : getSchoolRegion(school.getName()).values()){
-					if (region.isIn(e.getBlock().getLocation())){limit=false;return;}}}
 		if (limit){e.setCancelled(true);
 			e.getPlayer().sendMessage("You cannot build here!");}}	
 	
@@ -105,10 +93,6 @@ public class CrafterCoordinator implements Listener{
 		CrafterConfig.saveConfig();
 		plugin.getLogger().info("Crafter coordinator stopped");}
 
-	public void addSchool(String schoolName){schools.put(schoolName, new CrafterSchool(schoolName));}
-	public void addPlayer(UUID playerId){players.put(playerId, new CrafterPlayer(playerId));}
-	public void removeSchool(String schoolName){schools.remove(schoolName);schoolRegions.remove(schoolName);}
-	public void removePlayer(UUID playerId){players.remove(playerId);playerRegions.remove(playerId);}
 	public void setLoadAmountLimit(long LoadAmountLimit){if (LoadAmountLimit<0)throw new IllegalArgumentException(); loadAmountLimit=LoadAmountLimit;}
 	public void setLoadTimeLimit(long LoadTimeLimit){if (LoadTimeLimit<=0)throw new IllegalArgumentException(); loadTimeLimit=LoadTimeLimit;}
 	public void setHeightMaxLimit(int HeightMaxLimit){if (HeightMaxLimit<0||HeightMaxLimit>255)throw new IllegalArgumentException(); heightMaxLimit=HeightMaxLimit;}
@@ -117,34 +101,19 @@ public class CrafterCoordinator implements Listener{
 	public void removePlotLimit(CrafterRegion oldPlotLimit){getPlotLimit().remove(oldPlotLimit);}
 	public void addPlayerRegion(UUID playerId, String regionName, CrafterRegion region){getPlayerRegion(playerId).put(regionName, region);}
 	public void removePlayerRegion(UUID playerId, String regionName){getPlayerRegion(playerId).remove(regionName);}
-	public void addSchoolRegion(String schoolName, String regionName, CrafterRegion region){getSchoolRegion(schoolName).put(regionName, region);}
-	public void removeSchoolRegion(String schoolName, String regionName){getSchoolRegion(schoolName).remove(regionName);}
 	
 	public long getLoadAmountLimit(){return loadAmountLimit;}
 	public long getLoadTimeLimit(){return loadTimeLimit;}
 	public int getHeightMaxLimit(){return heightMaxLimit;}
 	public int getHeightMinLimit(){return heightMinLimit;}
 	public HashSet<CrafterRegion> getPlotLimit(){return plotLimit;}
-	public HashMap<UUID,CrafterPlayer> getPlayers(){return players;}
-	public HashMap<String,CrafterSchool> getSchools(){return schools;}
 
-	public CrafterPlayer getPlayer(UUID playerId){
-		if (!players.containsKey(playerId)) players.put(playerId, new CrafterPlayer(playerId));
-		return players.get(playerId);}
+
 	public HashMap<String,CrafterRegion> getPlayerRegion(UUID playerId){
-		if (!players.containsKey(playerId)) players.put(playerId, new CrafterPlayer(playerId));
 		if (!playerRegions.containsKey(playerId)) playerRegions.put(playerId, new HashMap<String,CrafterRegion>());
 		return playerRegions.get(playerId);}
-	public CrafterSchool getSchool(String schoolName){
-		if (!schools.containsKey(schoolName)) schools.put(schoolName, new CrafterSchool(schoolName));
-		return schools.get(schoolName);}
-	public HashMap<String,CrafterRegion> getSchoolRegion(String schoolName){
-		if (!schools.containsKey(schoolName)) schools.put(schoolName, new CrafterSchool(schoolName));
-		if (!schoolRegions.containsKey(schoolName)) schoolRegions.put(schoolName, new HashMap<String,CrafterRegion>());
-		return schoolRegions.get(schoolName);}
 
 	public boolean checkPlayerLimit(UUID playerId){
-		players.putIfAbsent(playerId, new CrafterPlayer(playerId));
 		return Bukkit.getOfflinePlayer(playerId).getPlayer().isOp();}
 	public boolean checkPlotLimit(CrafterRegion region){
 		for (CrafterRegion limitRegion : plotLimit){
